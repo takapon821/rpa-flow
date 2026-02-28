@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package.json package-lock.json ./
-RUN npm ci --production
+RUN npm ci
 
 # Copy source code
 COPY . .
