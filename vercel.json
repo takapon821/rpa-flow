@@ -5,7 +5,7 @@
   "crons": [
     {
       "path": "/api/cron/scheduled-robots",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {
@@ -18,22 +18,5 @@
     "src/app/api/worker/callback/route.ts": {
       "maxDuration": 60
     }
-  },
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "AUTH_SECRET": "@auth_secret",
-    "AUTH_GOOGLE_ID": "@auth_google_id",
-    "AUTH_GOOGLE_SECRET": "@auth_google_secret",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "WORKER_URL": "@worker_url",
-    "WORKER_SECRET": "@worker_secret",
-    "INNGEST_EVENT_KEY": "@inngest_event_key",
-    "INNGEST_SIGNING_KEY": "@inngest_signing_key",
-    "UPSTASH_REDIS_REST_URL": "@upstash_redis_rest_url",
-    "UPSTASH_REDIS_REST_TOKEN": "@upstash_redis_rest_token",
-    "BLOB_READ_WRITE_TOKEN": "@blob_read_write_token",
-    "RESEND_API_KEY": "@resend_api_key",
-    "NOTIFICATION_FROM_EMAIL": "@notification_from_email",
-    "NEXT_PUBLIC_APP_URL": "@next_public_app_url"
   }
 }
