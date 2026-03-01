@@ -25,6 +25,11 @@
 worker/node_modules/
 worker/dist/
 
+# extension
+extension/node_modules/
+extension/dist/
+extension/rpa-flow-recorder.zip
+
 # misc
 .DS_Store
 *.pem

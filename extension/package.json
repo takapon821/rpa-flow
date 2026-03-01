@@ -1,0 +1,12 @@
+{
+  "name": "rpa-flow-recorder-extension",
+  "version": "1.0.0",
+  "description": "rpa-flow Chrome拡張レコーダー",
+  "scripts": {
+    "build": "node build.js",
+    "package": "node build.js && node package.js"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.0"
+  }
+}

@@ -39,6 +39,7 @@ export default async function RobotsPage() {
           </h2>
           <p className="mb-4 text-sm text-gray-500">
             最初のロボットを作成して自動化を始めましょう。
+          Chrome拡張レコーダーから自動インポートも可能です。
           </p>
           <Link
             href="/robots/new"

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rpa-flow Recorder</title>
+  <style>
+    body { width: 320px; padding: 12px; font-family: sans-serif; font-size: 13px; margin: 0; }
+    h2 { margin: 0 0 10px; font-size: 15px; color: #333; }
+    button { width: 100%; padding: 8px; border: none; border-radius: 4px;
+             cursor: pointer; font-size: 13px; margin-bottom: 6px; }
+    #startBtn  { background: #22c55e; color: white; }
+    #stopBtn   { background: #ef4444; color: white; }
+    #sendBtn   { background: #3b82f6; color: white; }
+    #clearBtn  { background: #6b7280; color: white; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    input { width: 100%; box-sizing: border-box; padding: 6px;
+            border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; }
+    #status { font-size: 12px; color: #666; margin-bottom: 8px; }
+    #recording-badge { display:inline-block; background:#ef4444; color:white;
+                       border-radius:3px; padding:1px 6px; font-size:11px; }
+    #actionList { max-height: 160px; overflow-y: auto;
+                  border: 1px solid #eee; border-radius: 4px;
+                  padding: 4px; margin-bottom: 6px; }
+    .action-item { padding: 3px 0; border-bottom: 1px solid #f5f5f5;
+                   font-size: 11px; color: #444; }
+    label { font-size: 11px; color: #555; }
+    #msg { font-size: 12px; margin-top: 6px; min-height: 16px; }
+    .ok  { color: #16a34a; }
+    .err { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <h2>🎬 rpa-flow Recorder</h2>
+  <div id="status">状態: <span id="stateLabel">待機中</span></div>
+
+  <button id="startBtn">● 録画開始</button>
+  <button id="stopBtn" disabled>■ 録画停止</button>
+
+  <div id="actionList"><div style="color:#aaa;font-size:11px">操作がここに表示されます</div></div>
+
+  <label>ロボット名</label>
+  <input id="robotName" type="text" placeholder="録画ロボット" />
+
+  <label>rpa-flow URL</label>
+  <input id="apiUrl" type="text" placeholder="https://rpa-flow.vercel.app" />
+
+  <label>APIキー</label>
+  <input id="apiKey" type="password" placeholder="rpa_xxxxxx" />
+
+  <button id="sendBtn" disabled>🚀 rpa-flow に送信</button>
+  <button id="clearBtn" disabled>🗑 クリア</button>
+
+  <div id="msg"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
