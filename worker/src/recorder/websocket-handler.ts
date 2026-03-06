@@ -9,6 +9,7 @@ import {
   touchSession,
   addAction,
   startScreencast,
+  stopScreencast,
   ackScreencastFrame,
   type RecorderSession,
   type RecordedAction,
@@ -354,6 +355,21 @@ function handleConnection(ws: WebSocket, session: RecorderSession): void {
         case "refresh":
           await handleBrowserAction(ws, session, msg.type);
           break;
+        case "viewport": {
+          const vp = msg.viewport as { width: number; height: number } | undefined;
+          if (vp) {
+            touchSession(session.sessionId);
+            try {
+              await session.page.setViewportSize(vp);
+              // Restart screencast with new dimensions
+              await stopScreencast(session);
+              await startScreencast(session, 60, vp.width, vp.height);
+            } catch (err) {
+              sendError(ws, `Viewport change failed: ${err instanceof Error ? err.message : String(err)}`);
+            }
+          }
+          break;
+        }
         case "execute_step":
           await handleExecuteStep(ws, session, msg);
           break;

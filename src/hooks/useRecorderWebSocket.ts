@@ -304,6 +304,7 @@ export function useRecorderWebSocket() {
     ...state,
     connect,
     disconnect,
+    sendMessage,
     sendStart,
     sendClick,
     sendType,

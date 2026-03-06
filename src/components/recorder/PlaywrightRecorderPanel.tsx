@@ -13,7 +13,16 @@ import {
   Loader2,
   Wifi,
   WifiOff,
+  Monitor,
+  Smartphone,
 } from 'lucide-react';
+
+type ViewportPreset = 'pc' | 'mobile';
+
+const VIEWPORT_PRESETS: Record<ViewportPreset, { width: number; height: number; label: string }> = {
+  pc: { width: 1280, height: 720, label: 'PC' },
+  mobile: { width: 375, height: 812, label: 'スマホ' },
+};
 
 interface PlaywrightRecorderPanelProps {
   onActionSelect: (step: Omit<VisualStep, 'id'>) => void;
@@ -31,6 +40,7 @@ export function PlaywrightRecorderPanel({
   const [inputUrl, setInputUrl] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 450 });
+  const [viewportPreset, setViewportPreset] = useState<ViewportPreset>('pc');
 
   // Track whether we're recording
   const isRecording = recorder.status === 'connected' && recorder.sessionId !== null;
@@ -72,7 +82,7 @@ export function PlaywrightRecorderPanel({
     img.src = `data:image/jpeg;base64,${recorder.screenshot}`;
   }, [recorder.screenshot, recorder.hoveredElement, recorder.frameWidth, recorder.frameHeight]);
 
-  // Resize canvas to fit container
+  // Resize canvas to fit container (aspect ratio matches viewport preset)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -81,8 +91,8 @@ export function PlaywrightRecorderPanel({
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          // Maintain 16:9 aspect ratio within container
-          const aspectRatio = 16 / 9;
+          const vp = VIEWPORT_PRESETS[viewportPreset];
+          const aspectRatio = vp.width / vp.height;
           let canvasW = width;
           let canvasH = width / aspectRatio;
           if (canvasH > height) {
@@ -96,7 +106,7 @@ export function PlaywrightRecorderPanel({
 
     observer.observe(container);
     return () => observer.disconnect();
-  }, []);
+  }, [viewportPreset]);
 
   // Convert canvas coords to viewport coords
   const canvasToViewport = useCallback(
@@ -134,8 +144,9 @@ export function PlaywrightRecorderPanel({
       // Connect WebSocket (returns Promise, resolves on open)
       await recorder.connect(workerWsUrl, token);
 
-      // Connection is now open, send start immediately
-      recorder.sendStart(fullUrl, { width: 1280, height: 720 });
+      // Connection is now open, send start with selected viewport
+      const vp = VIEWPORT_PRESETS[viewportPreset];
+      recorder.sendStart(fullUrl, { width: vp.width, height: vp.height });
     } catch (err) {
       console.error('Failed to start recording:', err);
     } finally {
@@ -277,6 +288,44 @@ export function PlaywrightRecorderPanel({
           placeholder="https://example.com"
           className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+
+        {/* Viewport toggle */}
+        <div className="flex items-center border border-gray-300 rounded overflow-hidden">
+          <button
+            onClick={() => {
+              setViewportPreset('pc');
+              if (isRecording) {
+                const vp = VIEWPORT_PRESETS.pc;
+                recorder.sendMessage('viewport', { viewport: { width: vp.width, height: vp.height } });
+              }
+            }}
+            className={`p-1.5 transition ${
+              viewportPreset === 'pc'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-500 hover:bg-gray-100'
+            }`}
+            title="PC表示 (1280x720)"
+          >
+            <Monitor className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              setViewportPreset('mobile');
+              if (isRecording) {
+                const vp = VIEWPORT_PRESETS.mobile;
+                recorder.sendMessage('viewport', { viewport: { width: vp.width, height: vp.height } });
+              }
+            }}
+            className={`p-1.5 transition ${
+              viewportPreset === 'mobile'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-500 hover:bg-gray-100'
+            }`}
+            title="スマホ表示 (375x812)"
+          >
+            <Smartphone className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Start/Stop button */}
         {!isRecording ? (
