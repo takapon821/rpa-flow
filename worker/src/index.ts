@@ -31,6 +31,26 @@ app.post("/recorder/token", (req, res) => {
   res.json({ token });
 });
 
+// Diagnostic: test browser launch
+app.get("/debug/browser", async (_req, res) => {
+  try {
+    const { createContext, destroyContext } = await import("./browser-pool.js");
+    const testId = `debug_${Date.now()}`;
+    const ctx = await createContext(testId);
+    const page = await ctx.newPage();
+    await page.goto("about:blank");
+    const title = await page.title();
+    await destroyContext(testId);
+    res.json({ ok: true, title });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+  }
+});
+
 // Cancel endpoint
 app.post("/cancel/:executionId", (req, res) => {
   const { executionId } = req.params;
