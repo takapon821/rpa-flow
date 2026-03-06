@@ -30,7 +30,12 @@ router.post("/execute", async (req: Request, res: Response) => {
           executionId,
           step: stepResult,
         }),
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error(
+          `[execute] Callback error for step (${executionId}):`,
+          err instanceof Error ? err.message : String(err)
+        );
+      });
     }
   }).then(async (result) => {
     if (callbackUrl) {
@@ -41,8 +46,18 @@ router.post("/execute", async (req: Request, res: Response) => {
           type: "execution_complete",
           ...result,
         }),
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error(
+          `[execute] Callback error for completion (${executionId}):`,
+          err instanceof Error ? err.message : String(err)
+        );
+      });
     }
+  }).catch((err) => {
+    console.error(
+      `[execute] Execution error (${executionId}):`,
+      err instanceof Error ? err.message : String(err)
+    );
   });
 });
 

@@ -18,6 +18,7 @@
     "@upstash/redis": "^1.36.3",
     "@vercel/blob": "^2.3.0",
     "@xyflow/react": "^12.10.1",
+    "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.1",
     "inngest": "^3.52.4",
     "lucide-react": "^0.575.0",

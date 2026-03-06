@@ -75,6 +75,7 @@ async function executeSteps(
     }
 
     const startedAt = new Date().toISOString();
+    console.log(`[executor] Step ${step.id} (${step.actionType}) starting...`);
     try {
       const resolvedConfig = resolveVariables(step.config, variables);
 
@@ -288,22 +289,45 @@ export async function executeFlow(
   onStepComplete?: StatusCallback
 ): Promise<ExecutionResult> {
   const results: StepResult[] = [];
-  const ctx = await createContext(executionId);
-  const page = await ctx.newPage();
-  const variables = new Map<string, unknown>();
+  const EXECUTION_TIMEOUT = 5 * 60 * 1000; // 5 minutes default
+  let ctx: any = null;
+  let page: any = null;
 
   try {
-    const status = await executeSteps(
-      steps,
-      page,
-      variables,
-      results,
-      executionId,
-      onStepComplete
-    );
+    console.log(`[executor] Starting execution: ${executionId} (${steps.length} steps)`);
+    ctx = await createContext(executionId);
+    page = await ctx.newPage();
+    const variables = new Map<string, unknown>();
+
+    const executeWithTimeout = new Promise<"completed" | "failed">((resolve, reject) => {
+      const timeout = setTimeout(
+        () => reject(new Error("EXECUTION_TIMEOUT")),
+        EXECUTION_TIMEOUT
+      );
+
+      executeSteps(
+        steps,
+        page,
+        variables,
+        results,
+        executionId,
+        onStepComplete
+      )
+        .then((status) => {
+          clearTimeout(timeout);
+          resolve(status);
+        })
+        .catch((err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+    });
+
+    const status = await executeWithTimeout;
 
     if (status === "failed") {
       const lastError = results[results.length - 1]?.error ?? "Unknown error";
+      console.log(`[executor] Execution failed: ${executionId} - ${lastError}`);
       return {
         executionId,
         status: "failed",
@@ -312,10 +336,14 @@ export async function executeFlow(
       };
     }
 
+    console.log(`[executor] Execution completed: ${executionId}`);
     return { executionId, status: "completed", steps: results };
   } catch (err) {
-    // Handle EXECUTION_CANCELLED error
-    if (err instanceof Error && err.message === "EXECUTION_CANCELLED") {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+
+    // Handle specific errors
+    if (errorMsg === "EXECUTION_CANCELLED") {
+      console.log(`[executor] Execution cancelled: ${executionId}`);
       return {
         executionId,
         status: "failed",
@@ -323,10 +351,33 @@ export async function executeFlow(
         error: "Execution cancelled",
       };
     }
+
+    if (errorMsg === "EXECUTION_TIMEOUT") {
+      console.error(`[executor] Execution timeout: ${executionId}`);
+      return {
+        executionId,
+        status: "failed",
+        steps: results,
+        error: "Execution timeout exceeded (5 minutes)",
+      };
+    }
+
+    console.error(`[executor] Execution error (${executionId}):`, errorMsg);
     throw err;
   } finally {
-    await page.close().catch(() => {});
-    await destroyContext(executionId);
+    try {
+      if (page) {
+        await page.close();
+      }
+      if (ctx) {
+        await destroyContext(executionId);
+      }
+    } catch (err) {
+      console.error(
+        `[executor] Error during cleanup (${executionId}):`,
+        err instanceof Error ? err.message : String(err)
+      );
+    }
     // Clean up cancelled execution flag
     cancelledExecutions.delete(executionId);
   }

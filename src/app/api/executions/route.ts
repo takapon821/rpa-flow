@@ -2,17 +2,28 @@ import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
 import { executions, robots, apiKeys } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, count } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { createHash } from "crypto";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const db = getDb();
+  const url = new URL(req.url);
+  const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "20"), 100);
+  const offset = parseInt(url.searchParams.get("offset") ?? "0");
+
+  // Get total count
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(executions)
+    .innerJoin(robots, eq(executions.robotId, robots.id))
+    .where(eq(robots.ownerId, session.user.id));
+
   const results = await db
     .select({
       id: executions.id,
@@ -29,9 +40,13 @@ export async function GET() {
     .innerJoin(robots, eq(executions.robotId, robots.id))
     .where(eq(robots.ownerId, session.user.id))
     .orderBy(desc(executions.createdAt))
-    .limit(50);
+    .limit(limit)
+    .offset(offset);
 
-  return NextResponse.json({ executions: results });
+  return NextResponse.json({
+    executions: results,
+    total: total ?? 0
+  });
 }
 
 // POST: Trigger manual execution (with session or API key auth)

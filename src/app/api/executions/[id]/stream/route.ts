@@ -59,9 +59,42 @@ export async function GET(
           controller.close();
         }, 300_000);
       } else {
-        // No Redis: send a simple polling hint
-        send("info", { message: "Redis not configured, use polling" });
-        controller.close();
+        // No Redis: fall back to database polling
+        const { getDb } = await import("@/lib/db/client");
+        const { executions } = await import("@/lib/db/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const interval = setInterval(async () => {
+          try {
+            const db = getDb();
+            const [execution] = await db
+              .select()
+              .from(executions)
+              .where(eq(executions.id, executionId));
+
+            if (execution) {
+              send("status", { executionId, status: execution.status });
+
+              if (
+                execution.status === "completed" ||
+                execution.status === "failed" ||
+                execution.status === "cancelled"
+              ) {
+                clearInterval(interval);
+                send("done", { executionId, status: execution.status });
+                controller.close();
+              }
+            }
+          } catch {
+            // Continue polling
+          }
+        }, 2000);
+
+        // Timeout after 5 minutes
+        setTimeout(() => {
+          clearInterval(interval);
+          controller.close();
+        }, 300_000);
       }
     },
   });

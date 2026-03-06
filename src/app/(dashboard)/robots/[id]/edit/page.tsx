@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { FlowEditor } from "@/components/editor/flow-editor";
 import { SchedulePanel } from "@/components/editor/schedule-panel";
+import { VisualEditorWrapper } from "@/components/VisualEditorWrapper";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Node, Edge } from "@xyflow/react";
@@ -75,22 +76,13 @@ export default async function EditRobotPage({
           <ExecuteButton robotId={robot.id} />
         </div>
       </div>
-      <div className="flex flex-1 gap-4 overflow-hidden bg-gray-50 p-4">
-        {/* Main Editor */}
-        <div className="flex-1 overflow-hidden">
-          <FlowEditor
-            robotId={robot.id}
-            initialNodes={initialNodes}
-            initialEdges={initialEdges}
-          />
-        </div>
-        {/* Right Sidebar */}
-        <div className="w-80 overflow-y-auto">
-          <SchedulePanel
-            robotId={robot.id}
-            schedule={robot.schedule as any}
-          />
-        </div>
+      <div className="flex-1 overflow-hidden bg-gray-50 p-4">
+        <VisualEditorWrapper
+          robotId={robot.id}
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
+          schedule={robot.schedule as any}
+        />
       </div>
     </div>
   );

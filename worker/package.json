@@ -10,11 +10,13 @@
   "dependencies": {
     "express": "^5.1.0",
     "playwright": "^1.52.0",
+    "ws": "^8.18.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/express": "^5.0.2",
     "@types/node": "^20.19.35",
+    "@types/ws": "^8.5.13",
     "tsx": "^4",
     "typescript": "^5"
   }

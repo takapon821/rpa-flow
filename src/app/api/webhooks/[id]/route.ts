@@ -31,7 +31,24 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = (await req.json()) as UpdateWebhookRequest;
+    
+    // Validate ID format
+    if (!id || typeof id !== "string") {
+      return NextResponse.json(
+        { error: "Invalid webhook ID" },
+        { status: 400 }
+      );
+    }
+
+    let body: UpdateWebhookRequest;
+    try {
+      body = (await req.json()) as UpdateWebhookRequest;
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
 
     const db = getDb();
 
@@ -54,7 +71,7 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
 
     if (body.url !== undefined) {
-      if (typeof body.url !== "string" || body.url.length === 0) {
+      if (typeof body.url !== "string" || body.url.trim().length === 0) {
         return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
       }
       // Validate URL format
@@ -73,6 +90,13 @@ export async function PATCH(
       if (!Array.isArray(body.events) || body.events.length === 0) {
         return NextResponse.json(
           { error: "At least one event must be selected" },
+          { status: 400 }
+        );
+      }
+      // Validate event values are strings
+      if (!body.events.every((e) => typeof e === "string" && e.length > 0)) {
+        return NextResponse.json(
+          { error: "Invalid event format" },
           { status: 400 }
         );
       }
@@ -138,6 +162,14 @@ export async function DELETE(
 
   try {
     const { id } = await params;
+
+    // Validate ID format
+    if (!id || typeof id !== "string") {
+      return NextResponse.json(
+        { error: "Invalid webhook ID" },
+        { status: 400 }
+      );
+    }
 
     const db = getDb();
 

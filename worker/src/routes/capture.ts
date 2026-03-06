@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
-import { chromium } from "playwright";
+import { createContext, destroyContext } from "../browser-pool.js";
+import { randomUUID } from "crypto";
 
 const router = Router();
 
@@ -11,8 +12,9 @@ router.post("/capture", async (req: Request, res: Response) => {
     return;
   }
 
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const captureId = randomUUID();
+  const ctx = await createContext(captureId);
+  const page = await ctx.newPage();
 
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -58,12 +60,20 @@ router.post("/capture", async (req: Request, res: Response) => {
       title: await page.title(),
     });
   } catch (err) {
+    console.error("[capture]", err instanceof Error ? err.message : "Capture failed");
     res.status(500).json({
       error: err instanceof Error ? err.message : "Capture failed",
     });
   } finally {
-    await page.close().catch(() => {});
-    await browser.close().catch(() => {});
+    try {
+      await page.close();
+      await destroyContext(captureId);
+    } catch (err) {
+      console.error(
+        "[capture] Error cleaning up:",
+        err instanceof Error ? err.message : String(err)
+      );
+    }
   }
 });
 

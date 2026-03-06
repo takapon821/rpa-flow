@@ -57,14 +57,18 @@ function generateSelector(el) {
     const classes = el.className.trim().split(/\s+/)
       .filter(c => c && !c.match(/^(active|hover|focus|selected|disabled)$/));
     if (classes.length > 0) {
-      const sel = '.' + classes.join('.');
-      // セレクターがユニークか確認
-      try {
-        if (document.querySelectorAll(sel).length === 1) {
-          return sel;
+      // CSS セレクターとして有効な文字のみを許可
+      const validClasses = classes.filter(c => /^[a-zA-Z0-9_-]+$/.test(c));
+      if (validClasses.length > 0) {
+        const sel = '.' + validClasses.join('.');
+        // セレクターがユニークか確認
+        try {
+          if (document.querySelectorAll(sel).length === 1) {
+            return sel;
+          }
+        } catch (e) {
+          // セレクターが無効な場合はスキップ
         }
-      } catch (e) {
-        // セレクターが無効な場合はスキップ
       }
     }
   }

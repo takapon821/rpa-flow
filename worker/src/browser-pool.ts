@@ -1,6 +1,7 @@
 import { chromium, type Browser, type BrowserContext } from "playwright";
 
 const MAX_CONTEXTS = 3;
+const MAX_RECORDER_CONTEXTS = 2;
 
 let browser: Browser | null = null;
 const contexts = new Map<string, BrowserContext>();
@@ -15,8 +16,16 @@ async function getBrowser(): Promise<Browser> {
 }
 
 export async function createContext(executionId: string): Promise<BrowserContext> {
-  if (contexts.size >= MAX_CONTEXTS) {
-    throw new Error(`Max concurrent contexts (${MAX_CONTEXTS}) reached`);
+  const isRecorder = executionId.startsWith("recorder_");
+  const recorderCount = Array.from(contexts.keys()).filter((k) =>
+    k.startsWith("recorder_")
+  ).length;
+
+  if (isRecorder && recorderCount >= MAX_RECORDER_CONTEXTS) {
+    throw new Error(`Max concurrent recorder sessions (${MAX_RECORDER_CONTEXTS}) reached`);
+  }
+  if (contexts.size >= MAX_CONTEXTS + MAX_RECORDER_CONTEXTS) {
+    throw new Error(`Max concurrent contexts reached`);
   }
 
   const b = await getBrowser();
@@ -38,18 +47,37 @@ export async function getContext(
 export async function destroyContext(executionId: string): Promise<void> {
   const ctx = contexts.get(executionId);
   if (ctx) {
-    await ctx.close().catch(() => {});
-    contexts.delete(executionId);
+    try {
+      await ctx.close();
+      contexts.delete(executionId);
+      console.log(`[browser-pool] Context destroyed: ${executionId}`);
+    } catch (err) {
+      console.error(
+        `[browser-pool] Error closing context ${executionId}:`,
+        err instanceof Error ? err.message : String(err)
+      );
+      contexts.delete(executionId);
+    }
   }
 }
 
 export async function shutdown(): Promise<void> {
+  console.log("[browser-pool] Shutting down...");
   for (const [id] of contexts) {
     await destroyContext(id);
   }
   if (browser) {
-    await browser.close().catch(() => {});
-    browser = null;
+    try {
+      await browser.close();
+      console.log("[browser-pool] Browser closed successfully");
+    } catch (err) {
+      console.error(
+        "[browser-pool] Error closing browser:",
+        err instanceof Error ? err.message : String(err)
+      );
+    } finally {
+      browser = null;
+    }
   }
 }
 
